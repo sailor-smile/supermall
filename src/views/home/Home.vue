@@ -4,6 +4,7 @@
     <home-swiper :banners="banners"></home-swiper>
     <home-recommend-view :recommends="recommends"/>
     <feature-view/>
+    <TabControl class="tab-control" :titles="['流行','新款','精选']"></TabControl>
     <ul>
       <li>列表1</li>
       <li>列表2</li>
@@ -110,35 +111,71 @@
 </template>
 
 <script>
-  import NavBar from 'components/common/navbar/NavBar.vue'
   import HomeSwiper from './childComps/HomeSwiper.vue'
   import HomeRecommendView from './childComps/HomeRecommendView.vue'
   import FeatureView from './childComps/Feature.vue'
-  import {getHomeMultidata} from 'network/home.js'
+
+  import NavBar from 'components/common/navbar/NavBar.vue'
+  import TabControl from 'components/content/tabControl/TabControl.vue'
+
+  import {getHomeMultidata,getHomeGoods} from 'network/home.js'
+
 	export default{
 		name:"Home",
     components:{
-      NavBar,
       HomeSwiper,
       HomeRecommendView,
+      NavBar,
+      TabControl,
       FeatureView
     },
     data(){
       return{
         banners:[],
-        recommends:[]
+        recommends:[],
+        goods:{
+          'pop':{page:0,list:[]},
+          'new':{page:0,list:[]},
+          'sell':{page:0,list:[]}
+        }
       }
     },
     //生命周期组件创建完成后
     created(){
       //1.请求多个数据 由于拦截器 这里的res = res.data
-      getHomeMultidata().then(res => {
-        console.log(res);
-        //请求到的数据保存到data里
-        this.banners = res.data.banner.list
-        this.recommends = res.data.recommend.list
-      })
+      this.getHomeMultidata();
+
+      //2.请求商品数据
+      this.getHomeGoods('pop');
+      this.getHomeGoods('new');
+      this.getHomeGoods('sell');
+
+    },
+    methods:{
+      getHomeMultidata(){
+        getHomeMultidata().then(res => {
+
+          /* console.log(res); */
+          //请求到的数据保存到data里
+          this.banners = res.data.banner.list
+          this.recommends = res.data.recommend.list
+        })
+      },
+      getHomeGoods(type){
+        const page = this.goods[type].page +1
+        getHomeGoods(type,page).then(res => {
+          console.log(res);
+         this.goods[type].list.push(...res.data.list)
+         this.goods[type].page += 1
+        /* for(let item in res.data.list){
+           this.goods[type].list.push(item)
+         } */
+        })
+      }
+
+
     }
+
 	}
 </script>
 
@@ -154,5 +191,9 @@
     right: 0;
     top: 0px;
     z-index:999 /* 数值越大越在上面*/
+  }
+  .tab-control{
+    position: sticky;
+    top: 44px;
   }
 </style>
